@@ -32,6 +32,10 @@ namespace UnpiNet
         public int LenBytes;
 
         public event EventHandler<Packet> DataReceived;
+        public event EventHandler<SerialErrorReceivedEventArgs> ErrorReceived;
+
+        public event EventHandler Opened;
+        public event EventHandler Closed;
 
         /// <summary>
         /// Create a new instance of the Unpi class.
@@ -43,8 +47,16 @@ namespace UnpiNet
             Port = new SerialPort(port, baudrate);
 
             Port.DataReceived += Port_DataReceived;
+            Port.ErrorReceived += Port_ErrorReceived;
 
             LenBytes = lenBytes;
+
+            Open();
+        }
+
+        private void Port_ErrorReceived(object sender, SerialErrorReceivedEventArgs e)
+        {
+            ErrorReceived(sender, e);
         }
 
         private void Port_DataReceived(object sender, SerialDataReceivedEventArgs e)
@@ -53,6 +65,29 @@ namespace UnpiNet
             Port.Read(data, 0, Port.BytesToRead);
 
             Receive(data);
+        }
+
+        public void Open()
+        {
+            if (Port != null)
+            {
+                Port.Open();
+
+                Opened(this, EventArgs.Empty);
+            } else
+            {
+                throw new NullReferenceException("Port is not created");
+            }
+        }
+
+        public void Close()
+        {
+            if (Port.IsOpen)
+            {
+                Port.Close();
+
+                Closed(this, EventArgs.Empty);
+            }
         }
 
         public byte[] Send(int type, int subSystem, byte commandId, byte[] payload)
@@ -86,7 +121,7 @@ namespace UnpiNet
             }
 
             byte[] data = stream.ToArray();
-            Port.Write(data, 0, data.Length);
+            //Port.Write(data, 0, data.Length);
 
             return stream.ToArray();
         }

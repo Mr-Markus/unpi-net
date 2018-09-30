@@ -47,8 +47,8 @@ namespace UnpiNet
         /// <summary>
         /// Length field is 2 bytes long in little-endian format (so LSB first).
         /// </summary>
-        [FieldOrder(1)]
-        [SerializeWhen(nameof(LenBytes), 2)]
+        [FieldOrder(2)]
+        [SerializeWhen(nameof(LenBytes), 1)]
         public byte LengthByte { get; set; }
 
         [Ignore()]
@@ -64,7 +64,7 @@ namespace UnpiNet
         /// 
         /// Source: http://processors.wiki.ti.com/index.php/NPI_Type_SubSystem
         /// </summary>
-        [FieldOrder(2)]
+        [FieldOrder(3)]
         public byte Cmd0
         {
             get
@@ -76,14 +76,14 @@ namespace UnpiNet
         /// <summary>
         /// CMD1 is a 1 byte field that contains the opcode of the command being sent
         /// </summary>
-        [FieldOrder(3)]
+        [FieldOrder(4)]
         public byte Cmd1 { get; set; }
 
         /// <summary>
         /// Payload is a variable length field that contains the parameters defined by the 
         /// command that is selected by the CMD1 field. The length of the payload is defined by the length field.
         /// </summary>
-        [FieldOrder(4)]
+        [FieldOrder(5)]
         [FieldLength(nameof(Length))]
         [FieldChecksum(nameof(FrameCheckSequence), Mode = ChecksumMode.Xor)]
         public byte[] Payload { get; set; }
@@ -93,7 +93,7 @@ namespace UnpiNet
         /// send/receive on the bus (the SOF byte is always excluded from the FCS calculation): 
         ///     FCS = LEN_LSB XOR LEN_MSB XOR D1 XOR D2...XOR Dlen
         /// </summary>
-        [FieldOrder(5)]
+        [FieldOrder(6)]
         public byte FrameCheckSequence { get; set; }
     }
 }
