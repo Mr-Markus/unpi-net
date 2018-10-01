@@ -54,7 +54,7 @@ namespace UnpiNet
 
         private void Port_ErrorReceived(object sender, SerialErrorReceivedEventArgs e)
         {
-            ErrorReceived(sender, e);
+            ErrorReceived?.Invoke(sender, e);
         }
 
         private void Port_DataReceived(object sender, SerialDataReceivedEventArgs e)
@@ -71,7 +71,7 @@ namespace UnpiNet
             {
                 Port.Open();
 
-                Opened(this, EventArgs.Empty);
+                Opened?.Invoke(this, EventArgs.Empty);
             } else
             {
                 throw new NullReferenceException("Port is not created");
@@ -84,16 +84,16 @@ namespace UnpiNet
             {
                 Port.Close();
 
-                Closed(this, EventArgs.Empty);
+                Closed?.Invoke(this, EventArgs.Empty);
             }
         }
 
-        public byte[] Send(int type, int subSystem, byte commandId, byte[] payload)
+        public byte[] Send(int type, int subSystem, byte commandId, byte[] payload = null)
         {
             return Send((MessageType)type, (SubSystem)subSystem, commandId, payload);
         }
 
-        public byte[] Send(MessageType type, SubSystem subSystem, byte commandId, byte[] payload)
+        public byte[] Send(MessageType type, SubSystem subSystem, byte commandId, byte[] payload = null)
         {
             Packet packet = new Packet(type, subSystem, commandId, payload);
 
@@ -119,7 +119,7 @@ namespace UnpiNet
             }
 
             byte[] data = stream.ToArray();
-            //Port.Write(data, 0, data.Length);
+            Port.Write(data, 0, data.Length);
 
             return stream.ToArray();
         }
@@ -137,48 +137,52 @@ namespace UnpiNet
             }
 
             Packet packet = new Packet();
-            
+
             if (LenBytes == 1)
             {
                 packet.LenBytes = 1;
-                packet.LengthByte = buffer[1];
+                packet.LengthAsByte = buffer[1];
                 packet.Length = buffer[1];
 
                 packet.Payload = new byte[packet.Length];
-                Array.Copy(buffer, packet.Payload, packet.Length);
+                Array.Copy(buffer, 4, packet.Payload, 0, packet.Length);
 
-                packet.Type = (MessageType)(byte)(buffer[2] & 0xe0);
+                packet.Type = (MessageType)((byte)((byte)(buffer[2] & 0xe0)) >> 5);
                 packet.SubSystem = (SubSystem)(byte)(buffer[2] & 0x1f);
                 packet.Cmd1 = buffer[3];
 
-                packet.FrameCheckSequence = buffer[4 + packet.Length + 1];
+                packet.FrameCheckSequence = buffer[buffer.Length - 1];
+
+                byte[] preBuffer = BuildPreBuffer(packet.LengthAsByte, packet.Cmd0, packet.Cmd1);
+
+                packet.Checksum = checksum(preBuffer, packet.Payload);
             }
             else if (LenBytes == 2)
             {
                 packet.LenBytes = 2;
-                packet.LengthUShort = BitConverter.ToUInt16(new byte[] { buffer[1], buffer[2] }, 0);
-                packet.Length = packet.LengthUShort;
+                packet.LengthAsUShort = BitConverter.ToUInt16(new byte[] { buffer[1], buffer[2] }, 0);
+                packet.Length = packet.LengthAsUShort;
 
                 packet.Payload = new byte[packet.Length];
-                Array.Copy(buffer, packet.Payload, packet.Length);
+                Array.Copy(buffer, 5, packet.Payload, 0, packet.Length);
 
-                packet.Type = (MessageType)(byte)(buffer[3] & 0xe0);
+                packet.Type = (MessageType)((byte)((byte)(buffer[3] & 0xe0)) >> 5);
                 packet.SubSystem = (SubSystem)(byte)(buffer[3] & 0x1f);
                 packet.Cmd1 = buffer[4];
 
-                packet.FrameCheckSequence = buffer[5 + packet.Length + 1];
+                packet.FrameCheckSequence = buffer[buffer.Length - 1];
+
+                byte[] preBuffer = BuildPreBuffer(packet.LengthAsUShort, packet.Cmd0, packet.Cmd1);
+
+                packet.Checksum = checksum(preBuffer, packet.Payload);
             }
-
-            byte[] preBuffer = BuildPreBuffer(packet.Length, packet.Cmd0, packet.Cmd1);
-
-            packet.Checksum = checksum(preBuffer, packet.Payload);
             
             if(packet.FrameCheckSequence.Equals(packet.Checksum) == false)
             {
                 throw new Exception("Received FCS is not equal with new packet");
             }
 
-            DataReceived(this, packet);
+            DataReceived?.Invoke(this, packet);
 
             return packet;
         }

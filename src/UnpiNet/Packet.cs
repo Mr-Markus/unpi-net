@@ -12,17 +12,18 @@ namespace UnpiNet
     public class Packet
     {
 
-        public Packet()
+        public Packet(int lengthFieldSize = 1)
         {
-
+            LenBytes = lengthFieldSize;
         }
 
-        public Packet(MessageType type, SubSystem subSystem, byte commandId, byte[] payload)
+        public Packet(MessageType type, SubSystem subSystem, byte commandId, byte[] payload = null, int lengthFieldSize = 1)
         {
             Type = type;
             SubSystem = subSystem;
             Cmd1 = commandId;
-            Payload = payload;
+            Payload = payload != null ? payload : new byte[0];
+            LenBytes = lengthFieldSize;
         }
 
         [Ignore()]
@@ -42,14 +43,14 @@ namespace UnpiNet
         /// </summary>
         [FieldOrder(1)]
         [SerializeWhen(nameof(LenBytes), 2)]
-        public ushort LengthUShort { get; set; }
+        public ushort LengthAsUShort { get; set; }
 
         /// <summary>
         /// Length field is 2 bytes long in little-endian format (so LSB first).
         /// </summary>
         [FieldOrder(2)]
         [SerializeWhen(nameof(LenBytes), 1)]
-        public byte LengthByte { get; set; }
+        public byte LengthAsByte { get; set; }
 
         [Ignore()]
         public MessageType Type { get; set; }
@@ -69,7 +70,12 @@ namespace UnpiNet
         {
             get
             {
-                return (byte)((byte)(((byte)Type << 5) & 0xE0) | (byte)(((byte)SubSystem) & 0x1F));
+                return (byte)(((int)Type << 5) | ((int)SubSystem));
+            }
+            private set
+            {
+                Type = (MessageType)(value & 0xE0);
+                SubSystem = (SubSystem)(value & 0x1F);
             }
         }
 
@@ -85,7 +91,7 @@ namespace UnpiNet
         /// </summary>
         [FieldOrder(5)]
         [FieldLength(nameof(Length))]
-        [FieldChecksum(nameof(FrameCheckSequence), Mode = ChecksumMode.Xor)]
+        //[FieldChecksum(nameof(FrameCheckSequence), Mode = ChecksumMode.Xor)]
         public byte[] Payload { get; set; }
 
         /// <summary>
@@ -98,6 +104,6 @@ namespace UnpiNet
 
         //Self calculated checksum for check if incoming FrameSequenz is correct
         [Ignore()]
-        public byte Checksum{ get; set; }
+        public byte Checksum { get; set; }
     }
 }
