@@ -95,5 +95,9 @@ namespace UnpiNet
         /// </summary>
         [FieldOrder(6)]
         public byte FrameCheckSequence { get; set; }
+
+        //Self calculated checksum for check if incoming FrameSequenz is correct
+        [Ignore()]
+        public byte Checksum{ get; set; }
     }
 }

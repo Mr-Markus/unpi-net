@@ -50,8 +50,6 @@ namespace UnpiNet
             Port.ErrorReceived += Port_ErrorReceived;
 
             LenBytes = lenBytes;
-
-            Open();
         }
 
         private void Port_ErrorReceived(object sender, SerialErrorReceivedEventArgs e)
@@ -173,15 +171,12 @@ namespace UnpiNet
 
             byte[] preBuffer = BuildPreBuffer(packet.Length, packet.Cmd0, packet.Cmd1);
 
-            byte csum = checksum(preBuffer, packet.Payload);
+            packet.Checksum = checksum(preBuffer, packet.Payload);
             
-                if(packet.FrameCheckSequence.Equals(csum) == false)
+            if(packet.FrameCheckSequence.Equals(packet.Checksum) == false)
             {
                 throw new Exception("Received FCS is not equal with new packet");
             }
-
-            // forward data to stream
-            //Stream.Write(buffer, 0, buffer.Length);
 
             DataReceived(this, packet);
 
@@ -204,7 +199,6 @@ namespace UnpiNet
             {
                 byte[] preBuffer = new byte[LenBytes + 2];
 
-                //TODO: Check if length is two bytes long
                 byte[] lengthBytes = BitConverter.GetBytes((ushort)length);
                 preBuffer[0] = lengthBytes[0]; //(byte)(packet.Length >> 8);
                 preBuffer[1] = lengthBytes[1]; //(byte)(packet.Length  & 0xff);
