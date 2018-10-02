@@ -11,51 +11,54 @@ namespace UnpiNet
     /// </summary>
     public class Packet
     {
+        [Ignore()]
+        private byte _SOF = 0xfe;
 
-        public Packet(int lengthFieldSize = 1)
+        public Packet()
         {
-            LenBytes = lengthFieldSize;
+            
         }
 
-        public Packet(MessageType type, SubSystem subSystem, byte commandId, byte[] payload = null, int lengthFieldSize = 1)
+        public Packet(MessageType type, SubSystem subSystem, byte commandId, byte[] payload = null)
         {
             Type = type;
             SubSystem = subSystem;
             Cmd1 = commandId;
             Payload = payload != null ? payload : new byte[0];
-            LenBytes = lengthFieldSize;
+
+            if(payload != null)
+            {
+                Length = (byte)payload.Length;
+
+                CalcFcs();
+            }
         }
-
-        [Ignore()]
-        public int LenBytes { get; set; }
-
-        [Ignore()]
-        public int Length { get; set; }
 
         /// <summary>
         /// Start of Frame(SOF) is set to be 0xFE (254)
         /// </summary>
         [FieldOrder(0)]
-        public byte SOF => 0xfe;
+        public byte SOF
+        {
+            get
+            {
+                return _SOF;
+            }
+            set
+            {
+                _SOF = value;
+            }
+        }
 
-        /// <summary>
-        /// Length field is 2 bytes long in little-endian format (so LSB first).
-        /// </summary>
         [FieldOrder(1)]
-        [SerializeWhen(nameof(LenBytes), 2)]
-        public ushort LengthAsUShort { get; set; }
+        public byte Length { get; set; }
 
-        /// <summary>
-        /// Length field is 2 bytes long in little-endian format (so LSB first).
-        /// </summary>
         [FieldOrder(2)]
-        [SerializeWhen(nameof(LenBytes), 1)]
-        public byte LengthAsByte { get; set; }
-
-        [Ignore()]
+        [FieldBitLength(3)]
         public MessageType Type { get; set; }
 
-        [Ignore()]
+        [FieldOrder(3)]
+        [FieldBitLength(5)]
         public SubSystem SubSystem { get; set; }
 
         /// <summary>
@@ -65,7 +68,7 @@ namespace UnpiNet
         /// 
         /// Source: http://processors.wiki.ti.com/index.php/NPI_Type_SubSystem
         /// </summary>
-        [FieldOrder(3)]
+        [Ignore()]
         public byte Cmd0
         {
             get
@@ -104,6 +107,51 @@ namespace UnpiNet
 
         //Self calculated checksum for check if incoming FrameSequenz is correct
         [Ignore()]
-        public byte Checksum { get; set; }
+        public byte Checksum
+        {
+            get
+            {
+                byte[] preBuffer = new byte[3];
+
+                preBuffer[0] = (byte)this.Length;
+                preBuffer[1] = this.Cmd0;
+                preBuffer[2] = this.Cmd1;
+
+                return this.checksum(preBuffer, this.Payload);
+            }
+        }
+
+        private byte checksum(byte[] buf1, byte[] buf2)
+        {
+            var fcs = (byte)0x00;
+            var buf1_len = buf1.Length;
+            var buf2_len = buf2.Length;
+
+            for (int i = 0; i < buf1_len; i += 1)
+            {
+                fcs ^= buf1[i];
+            }
+
+            if (buf2 != null)
+            {
+                for (int i = 0; i < buf2_len; i += 1)
+                {
+                    fcs ^= buf2[i];
+                }
+            }
+
+            return fcs;
+        }
+
+        public void CalcFcs()
+        {
+            byte[] preBuffer = new byte[3];
+
+            preBuffer[0] = (byte)this.Length;
+            preBuffer[1] = this.Cmd0;
+            preBuffer[2] = this.Cmd1;
+
+            this.FrameCheckSequence = this.checksum(preBuffer, this.Payload);
+        }
     }
 }

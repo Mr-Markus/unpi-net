@@ -102,9 +102,7 @@ namespace UnpiNet
 
         public byte[] Send(Packet packet)
         {
-            byte[] preBuffer = BuildPreBuffer(packet.Payload.Length, packet.Cmd0, packet.Cmd1);
-
-            packet.FrameCheckSequence = checksum(preBuffer, packet.Payload);
+            packet.CalcFcs();
 
             var stream = new MemoryStream();
             var serializer = new BinarySerializer();
@@ -124,119 +122,32 @@ namespace UnpiNet
             return stream.ToArray();
         }
 
-        public Packet Receive(byte[] buffer)
+        public void Receive(byte[] buffer)
         {
             if(buffer == null || buffer.Length == 0)
             {
                 throw new NullReferenceException("Buffer is empty");
             }
 
-            if(buffer[0] != 0xfe)
+            if(buffer[0] != 0xfe) //Fix SOF
             {
                 throw new FormatException("Buffer is not a vailid frame");
             }
 
-            Packet packet = new Packet();
+            var stream = new MemoryStream(buffer);
+            var serializer = new BinarySerializer();
 
-            if (LenBytes == 1)
-            {
-                packet.LenBytes = 1;
-                packet.LengthAsByte = buffer[1];
-                packet.Length = buffer[1];
+            List<Packet> packets = serializer.Deserialize<List<Packet>>(stream);
 
-                packet.Payload = new byte[packet.Length];
-                Array.Copy(buffer, 4, packet.Payload, 0, packet.Length);
-
-                packet.Type = (MessageType)((byte)((byte)(buffer[2] & 0xe0)) >> 5);
-                packet.SubSystem = (SubSystem)(byte)(buffer[2] & 0x1f);
-                packet.Cmd1 = buffer[3];
-
-                packet.FrameCheckSequence = buffer[buffer.Length - 1];
-
-                byte[] preBuffer = BuildPreBuffer(packet.LengthAsByte, packet.Cmd0, packet.Cmd1);
-
-                packet.Checksum = checksum(preBuffer, packet.Payload);
-            }
-            else if (LenBytes == 2)
-            {
-                packet.LenBytes = 2;
-                packet.LengthAsUShort = BitConverter.ToUInt16(new byte[] { buffer[1], buffer[2] }, 0);
-                packet.Length = packet.LengthAsUShort;
-
-                packet.Payload = new byte[packet.Length];
-                Array.Copy(buffer, 5, packet.Payload, 0, packet.Length);
-
-                packet.Type = (MessageType)((byte)((byte)(buffer[3] & 0xe0)) >> 5);
-                packet.SubSystem = (SubSystem)(byte)(buffer[3] & 0x1f);
-                packet.Cmd1 = buffer[4];
-
-                packet.FrameCheckSequence = buffer[buffer.Length - 1];
-
-                byte[] preBuffer = BuildPreBuffer(packet.LengthAsUShort, packet.Cmd0, packet.Cmd1);
-
-                packet.Checksum = checksum(preBuffer, packet.Payload);
-            }
-            
-            if(packet.FrameCheckSequence.Equals(packet.Checksum) == false)
-            {
-                throw new Exception("Received FCS is not equal with new packet");
-            }
-
-            DataReceived?.Invoke(this, packet);
-
-            return packet;
-        }
-
-        private byte[] BuildPreBuffer(int length, byte cmd0, byte cmd1)
-        {
-            if (LenBytes == 1)
-            {
-                byte[] preBuffer = new byte[LenBytes + 2];
-
-                preBuffer[0] = (byte)length;
-                preBuffer[1] = cmd0;
-                preBuffer[2] = cmd1;
-
-                return preBuffer;
-            }
-            else if (LenBytes == 2)
-            {
-                byte[] preBuffer = new byte[LenBytes + 2];
-
-                byte[] lengthBytes = BitConverter.GetBytes((ushort)length);
-                preBuffer[0] = lengthBytes[0]; //(byte)(packet.Length >> 8);
-                preBuffer[1] = lengthBytes[1]; //(byte)(packet.Length  & 0xff);
-
-                preBuffer[2] = cmd0;
-                preBuffer[3] = cmd1;
-
-                return preBuffer;
-            } else
-            {
-                throw new ArgumentOutOfRangeException("Length field can only be 1 or 2 bytes long");
-            }
-        }
-
-        private byte checksum(byte[] buf1, byte[] buf2)
-        {
-            var fcs = (byte)0x00;
-            var buf1_len = buf1.Length;
-            var buf2_len = buf2.Length;
-
-            for (int i = 0; i < buf1_len; i += 1)
-            {
-                fcs ^= buf1[i];
-            }
-
-            if (buf2 != null)
-            {
-                for (int i = 0; i < buf2_len; i += 1)
+            foreach (Packet packet in packets)
+            {            
+                if(packet.FrameCheckSequence.Equals(packet.Checksum) == false)
                 {
-                    fcs ^= buf2[i];
+                    throw new Exception("Received FCS is not equal with new packet");
                 }
-            }
 
-            return fcs;
-        }
+                DataReceived?.Invoke(this, packet);
+            }
+        }        
     }
 }
