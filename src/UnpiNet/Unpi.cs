@@ -73,7 +73,7 @@ namespace UnpiNet
             {
                 Port.Open();
 
-                Opened?.Invoke(this, EventArgs.Empty);
+                Opened(this, EventArgs.Empty);
             } else
             {
                 throw new NullReferenceException("Port is not created");
@@ -86,7 +86,7 @@ namespace UnpiNet
             {
                 Port.Close();
 
-                Closed?.Invoke(this, EventArgs.Empty);
+                Closed(this, EventArgs.Empty);
             }
         }
 
@@ -153,7 +153,7 @@ namespace UnpiNet
                 packet.SubSystem = (SubSystem)(byte)(buffer[2] & 0x1f);
                 packet.Cmd1 = buffer[3];
 
-                packet.FrameCheckSequence = buffer[3 + packet.Length + 1];
+                packet.FrameCheckSequence = buffer[4 + packet.Length + 1];
             }
             else if (LenBytes == 2)
             {
@@ -168,7 +168,7 @@ namespace UnpiNet
                 packet.SubSystem = (SubSystem)(byte)(buffer[3] & 0x1f);
                 packet.Cmd1 = buffer[4];
 
-                packet.FrameCheckSequence = buffer[4 + packet.Length + 1];
+                packet.FrameCheckSequence = buffer[5 + packet.Length + 1];
             }
 
             byte[] preBuffer = BuildPreBuffer(packet.Length, packet.Cmd0, packet.Cmd1);
@@ -183,7 +183,7 @@ namespace UnpiNet
             // forward data to stream
             //Stream.Write(buffer, 0, buffer.Length);
 
-            DataReceived?.Invoke(this, packet);
+            DataReceived(this, packet);
 
             return packet;
         }
