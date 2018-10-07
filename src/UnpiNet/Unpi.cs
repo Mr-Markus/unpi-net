@@ -104,22 +104,30 @@ namespace UnpiNet
         {
             packet.CalcFcs();
 
-            var stream = new MemoryStream();
             var serializer = new BinarySerializer();
 
-            serializer.Serialize(stream, packet);
+            using (MemoryStream stream = new MemoryStream())
+            {
+                serializer.Serialize(stream, packet);
 
-            stream.Flush();
+                stream.Flush();
 
-            if(Port.IsOpen == false)
+                byte[] data = stream.ToArray();
+
+                return Send(data);
+            }
+        }
+
+        public byte[] Send(byte[] data)
+        {
+            if (Port.IsOpen == false)
             {
                 Port.Open();
             }
-
-            byte[] data = stream.ToArray();
+            
             Port.Write(data, 0, data.Length);
 
-            return stream.ToArray();
+            return data;
         }
 
         public void Receive(byte[] buffer)
@@ -134,11 +142,14 @@ namespace UnpiNet
                 throw new FormatException("Buffer is not a vailid frame");
             }
 
-            var stream = new MemoryStream(buffer);
             var serializer = new BinarySerializer();
 
-            List<Packet> packets = serializer.Deserialize<List<Packet>>(stream);
+            List<Packet> packets = new List<Packet>();
 
+            using (MemoryStream stream = new MemoryStream(buffer))
+            {
+                packets.AddRange(serializer.Deserialize<List<Packet>>(stream));
+            }
             foreach (Packet packet in packets)
             {            
                 if(packet.FrameCheckSequence.Equals(packet.Checksum) == false)
