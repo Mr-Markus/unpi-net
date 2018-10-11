@@ -134,7 +134,7 @@ namespace UnpiNet
         {
             if(buffer == null || buffer.Length == 0)
             {
-                throw new NullReferenceException("Buffer is empty");
+                throw new ArgumentNullException(nameof(buffer));
             }
 
             if(buffer[0] != 0xfe) //Fix SOF
