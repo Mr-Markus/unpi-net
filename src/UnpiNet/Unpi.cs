@@ -59,10 +59,13 @@ namespace UnpiNet
 
         private void Port_DataReceived(object sender, SerialDataReceivedEventArgs e)
         {
-            byte[] data = new byte[Port.BytesToRead];
-            Port.Read(data, 0, Port.BytesToRead);
+            if (Port.BytesToRead > 0)
+            {
+                byte[] data = new byte[Port.BytesToRead];
+                Port.Read(data, 0, Port.BytesToRead);
 
-            Receive(data);
+                Receive(data);
+            }
         }
 
         public void Open()
@@ -72,7 +75,8 @@ namespace UnpiNet
                 Port.Open();
 
                 Opened?.Invoke(this, EventArgs.Empty);
-            } else
+            }
+            else
             {
                 throw new NullReferenceException("Port is not created");
             }
@@ -124,20 +128,28 @@ namespace UnpiNet
             {
                 Port.Open();
             }
-            
+
             Port.Write(data, 0, data.Length);
 
+            if (Port.BytesToRead > 0)
+            {
+                byte[] result = new byte[Port.BytesToRead];
+                Port.Read(result, 0, Port.BytesToRead);
+
+                Receive(result);
+                return result;
+            }
             return data;
         }
 
         public void Receive(byte[] buffer)
         {
-            if(buffer == null || buffer.Length == 0)
+            if (buffer == null || buffer.Length == 0)
             {
                 throw new ArgumentNullException(nameof(buffer));
             }
 
-            if(buffer[0] != 0xfe) //Fix SOF
+            if (buffer[0] != 0xfe) //Fix SOF
             {
                 throw new FormatException("Buffer is not a vailid frame");
             }
@@ -151,14 +163,14 @@ namespace UnpiNet
                 packets.AddRange(serializer.Deserialize<List<Packet>>(stream));
             }
             foreach (Packet packet in packets)
-            {            
-                if(packet.FrameCheckSequence.Equals(packet.Checksum) == false)
+            {
+                if (packet.FrameCheckSequence.Equals(packet.Checksum) == false)
                 {
                     throw new Exception("Received FCS is not equal with new packet");
                 }
 
                 DataReceived?.Invoke(this, packet);
             }
-        }        
+        }
     }
 }
