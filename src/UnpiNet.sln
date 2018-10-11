@@ -3,6 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28010.2036
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{4E54D5D3-C813-4D9F-99C9-26AEA0796A9B}"
+	ProjectSection(SolutionItems) = preProject
+		..\paket.dependencies = ..\paket.dependencies
+	EndProjectSection
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UnpiNet", "UnpiNet\UnpiNet.csproj", "{61563195-1D5B-4688-9939-908830CC8DF7}"
 EndProject
 Global
