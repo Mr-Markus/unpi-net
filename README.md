@@ -45,8 +45,9 @@ FCS = LEN_LSB XOR LEN_MSB XOR D1 XOR D2 ... XOR Dlen
 | 0x03 | Synchronous Response (SRESP) |
 
 #### Synchronous Messages 
-A Synchronous Request (SREQ) is a frame, defined by data content instead of the ordering of events of the physical interface, which is sent from the Host to NP where the next frame sent from NP to Host must be the Synchronous Response (SRESP) to that SREQ. 
-Note that once a SREQ is sent, the NPI interface blocks until a corresponding response(SRESP) is received. 
+A Synchronous Request (SREQ) is a frame, defined by data content instead of the ordering of events of the physical interface, which is sent from the Host to NP where the next frame sent from NP to Host must be the Synchronous Response (SRESP) to that SREQ.
+
+Note that once a SREQ is sent, the NPI interface blocks until a corresponding response(SRESP) is received.
 #### Asynchronous Messages 
 Asynchronous Request transfer initiated by Host Asynchronous Indication – transfer initiated by NP. 
 Both types of asynchronous messages use the same message type bit field (0x02). The type of message (request/indication) depends on which processor initiated the transaction. 
@@ -55,7 +56,7 @@ Source:
 [http://processors.wiki.ti.com/index.php/Unified_Network_Processor_Interface](http://processors.wiki.ti.com/index.php/Unified_Network_Processor_Interface)
 
 ## License
-ZigbeeNET is provided under [The MIT License](https://github.com/Mr-Markus/unpi-net/blob/master/LICENSE).
+unpi-net is provided under [The MIT License](https://github.com/Mr-Markus/unpi-net/blob/master/LICENSE).
 
 ## Contributor
 
