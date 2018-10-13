@@ -7,7 +7,7 @@ namespace UnpiNet
     /// <summary>
     /// Source: http://processors.wiki.ti.com/index.php/NPI_Type_SubSystem
     /// </summary>
-    public enum SubSystem
+    public enum SubSystem : byte
     {
         RPC_SYS_RES = 0x00,
         RPC_SYS_SYS = 0x01,

@@ -125,7 +125,7 @@ namespace UnpiNet
         {
             var fcs = (byte)0x00;
             var buf1_len = buf1.Length;
-            var buf2_len = buf2.Length;
+            var buf2_len = buf2 != null ? buf2.Length : 0;
 
             for (int i = 0; i < buf1_len; i += 1)
             {
