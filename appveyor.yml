@@ -1,0 +1,10 @@
+version: 1.0.{build}
+image:
+  - Visual Studio 2017
+  - Ubuntu1804
+
+before_build:
+  - nuget restore src/UnpiNet.sln  
+build:
+  verbosity: minimal
+  project: src/UnpiNet.sln
