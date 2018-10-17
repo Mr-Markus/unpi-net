@@ -1,4 +1,4 @@
-# unpi-net
+# unpi-net [![AppVeyor build status](https://ci.appveyor.com/api/projects/status/github/Mr-Markus/unpi-net?branch=master&svg=true)](https://ci.appveyor.com/project/Mr-Markus/unpi-net/branch/master) 
 A .Net implementation of Texas Intrument's **Unified Network Processor Interface (UNPI)**
 
 You want to communicate with Texas Instrument chips like CC253x (Zigbee) with .NET? Then unpi-net is the right library for you.
