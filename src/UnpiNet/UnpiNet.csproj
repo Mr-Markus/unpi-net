@@ -2,6 +2,15 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Authors>Mr-Markus</Authors>
+    <Description>A .Net implementation of Texas Intrument's Unified Network Processor Interface (UNPI)</Description>
+    <Copyright>Mr-Markus</Copyright>
+    <PackageLicenseUrl>https://github.com/Mr-Markus/unpi-net/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/Mr-Markus/unpi-net</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Mr-Markus/unpi-net</RepositoryUrl>
+    <RepositoryType>Git</RepositoryType>
+    <PackageTags>texas instruments,serial,zigbee,cc2531,cc2530,unpi</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
